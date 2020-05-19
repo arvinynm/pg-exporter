@@ -1,8 +1,9 @@
 package scraper
 
 import (
+	"database/sql"
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"time"
 )
 
 type TotalConnectionScraper struct {
@@ -12,35 +13,45 @@ func (t *TotalConnectionScraper) Scrape(ch chan<- prometheus.Metric) {
 
 }
 
-type YnmPowerScraper struct {
-
+type TotalConnectScraper struct {
+	Query string
 }
 
-func (y *YnmPowerScraper) Scrape(ch chan<- prometheus.Metric) {
-	ynmPowerGauge.Set(index)
-	ch <- ynmPowerGauge
+func (t *TotalConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
+	var (
+		err error
+		count float64
+	)
+
+	rows, err := db.Query(t.Query)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		fmt.Println(count)
+	}
+
+	totalConnectGauge.Set(count)
+	ch <- totalConnectGauge
 }
 
-func (y *YnmPowerScraper) Name() string {
+func (t *TotalConnectScraper) Name() string {
 	return "ynm_power_scraper"
 }
 
 var (
-	index float64
 	gaugeOpt = prometheus.GaugeOpts{
-		Name: "ynm_dex",
-		Help: "yanningmin's dex",
-		ConstLabels:prometheus.Labels{"zone": "ynm"},
+		Name: "total_connections",
+		Help: "postgres total connections",
+		ConstLabels:prometheus.Labels{"zone": "postgres"},
 	}
-	ynmPowerGauge = prometheus.NewGauge(gaugeOpt)
+	totalConnectGauge = prometheus.NewGauge(gaugeOpt)
 )
-
-
-func init() {
-	go func() {
-		for {
-			time.Sleep(1 * time.Second)
-			index++
-		}
-	}()
-}

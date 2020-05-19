@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/common/log"
 	"net/http"
 	"pg-exporter/collector"
+	"pg-exporter/conn"
 	"pg-exporter/scraper"
 )
 
@@ -23,8 +24,14 @@ var (
 )
 
 func init() {
-	var p = &collector.PgCollector{}
-	p.Scrapers = append(p.Scrapers, &scraper.YnmPowerScraper{})
+	db := conn.Connect()
+
+	var p = &collector.PgCollector{DB: db}
+	p.Scrapers = append(p.Scrapers,
+		&scraper.TotalConnectScraper{
+			Query: "select count(*) from pg_stat_activity",
+		},
+	)
 
 	prometheus.MustRegister(p)
 	prometheus.MustRegister(cpuTemp)
@@ -33,7 +40,7 @@ func init() {
 
 func main() {
 	cpuTemp.Set(65.3)
-	hdFailures.With(prometheus.Labels{"device":"/dev/sda"}).Inc()
+	hdFailures.With(prometheus.Labels{"device": "/dev/sda"}).Inc()
 
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":9096", nil))
