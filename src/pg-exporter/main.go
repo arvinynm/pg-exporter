@@ -28,9 +28,8 @@ func init() {
 
 	var p = &collector.PgCollector{DB: db}
 	p.Scrapers = append(p.Scrapers,
-		&scraper.TotalConnectScraper{
-			Query: "select count(*) from pg_stat_activity",
-		},
+		scraper.NewTotalConnectScraper(),
+		scraper.NewNewConnectScraper(),
 	)
 
 	prometheus.MustRegister(p)

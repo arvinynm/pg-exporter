@@ -6,15 +6,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type TotalConnectionScraper struct {
-}
+const maxConnectionsSql = "select count(*) from pg_stat_activity"
 
-func (t *TotalConnectionScraper) Scrape(ch chan<- prometheus.Metric) {
+type TotalConnectScraper struct {}
 
-}
-
-type TotalConnectScraper struct {
-	Query string
+func NewTotalConnectScraper () *TotalConnectScraper {
+	return &TotalConnectScraper{}
 }
 
 func (t *TotalConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
@@ -23,7 +20,7 @@ func (t *TotalConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
 		count float64
 	)
 
-	rows, err := db.Query(t.Query)
+	rows, err := db.Query(maxConnectionsSql)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -44,14 +41,14 @@ func (t *TotalConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
 }
 
 func (t *TotalConnectScraper) Name() string {
-	return "ynm_power_scraper"
+	return "total_connections_scraper"
 }
 
 var (
-	gaugeOpt = prometheus.GaugeOpts{
+	totalConnOpt = prometheus.GaugeOpts{
 		Name: "total_connections",
 		Help: "postgres total connections",
 		ConstLabels:prometheus.Labels{"zone": "postgres"},
 	}
-	totalConnectGauge = prometheus.NewGauge(gaugeOpt)
+	totalConnectGauge = prometheus.NewGauge(totalConnOpt)
 )
