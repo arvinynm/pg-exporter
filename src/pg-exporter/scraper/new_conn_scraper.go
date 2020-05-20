@@ -2,8 +2,8 @@ package scraper
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"pg-exporter/log"
 )
 
 const newConnectionSql = "select count(*) from pg_stat_activity where now()-backend_start > '5 second'"
@@ -16,7 +16,7 @@ func NewNewConnectScraper () *NewConnectScraper {
 	return &NewConnectScraper{}
 }
 
-func (t *NewConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
+func (t *NewConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error{
 	var (
 		err error
 		count float64
@@ -24,22 +24,21 @@ func (t *NewConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
 
 	rows, err := db.Query(newConnectionSql)
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		return err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			fmt.Println(err.Error())
-			return
+			return err
 		}
-		fmt.Println(count)
+		log.Infof("new connection count in 30s: %f", count)
 	}
 
 	newConnect30sGauge.Set(count)
 	ch <- newConnect30sGauge
+	return nil
 }
 
 func (t *NewConnectScraper) Name() string {

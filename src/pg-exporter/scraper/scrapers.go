@@ -6,6 +6,6 @@ import (
 )
 
 type Scraper interface {
-	Scrape(db *sql.DB, ch chan<- prometheus.Metric)
+	Scrape(db *sql.DB, ch chan<- prometheus.Metric) error
 	Name() string
 }

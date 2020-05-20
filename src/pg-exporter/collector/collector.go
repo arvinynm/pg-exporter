@@ -2,8 +2,8 @@ package collector
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"pg-exporter/log"
 	"pg-exporter/scraper"
 )
 
@@ -23,8 +23,10 @@ func (p *PgCollector) Collect(ch chan<- prometheus.Metric) {
 
 
 func (p *PgCollector) Scrape (ch chan <-prometheus.Metric) {
-	fmt.Println("coming here")
 	for _, s := range p.Scrapers {
-		s.Scrape(p.DB, ch)
+		err := s.Scrape(p.DB, ch)
+		if err != nil {
+			log.Error(err.Error())
+		}
 	}
 }

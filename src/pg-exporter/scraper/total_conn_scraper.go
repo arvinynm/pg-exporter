@@ -2,11 +2,11 @@ package scraper
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"pg-exporter/log"
 )
 
-const maxConnectionsSql = "select count(*) from pg_stat_activity"
+const totalConnectionsSql = "select count(*) from pg_stat_activity"
 
 type TotalConnectScraper struct {}
 
@@ -14,30 +14,29 @@ func NewTotalConnectScraper () *TotalConnectScraper {
 	return &TotalConnectScraper{}
 }
 
-func (t *TotalConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) {
+func (t *TotalConnectScraper) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	var (
 		err error
 		count float64
 	)
 
-	rows, err := db.Query(maxConnectionsSql)
+	rows, err := db.Query(totalConnectionsSql)
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		return err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			fmt.Println(err.Error())
-			return
+			return err
 		}
-		fmt.Println(count)
+		log.Infof("total connections count: %f", count)
 	}
 
 	totalConnectGauge.Set(count)
 	ch <- totalConnectGauge
+	return nil
 }
 
 func (t *TotalConnectScraper) Name() string {
