@@ -35,7 +35,7 @@ func initLogger() *zap.Logger {
 
 	fileLevel := zap.NewAtomicLevel()
 	highPriority := zap.LevelEnablerFunc(func(level zapcore.Level) bool{
-		return level < zapcore.WarnLevel
+		return level > zapcore.WarnLevel
 	})
 
 	encoderConfig := zap.NewProductionEncoderConfig()
